@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Swalah Union Portal",
+  "description": "A modern SaaS dashboard for Swalah Union to manage committees, language wings, programs, attendance, and student performance leaderboards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
