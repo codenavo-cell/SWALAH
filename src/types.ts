@@ -9,6 +9,7 @@ export interface Student {
   bio?: string;
   skills?: string[];
   certificates?: string[];
+  photoUrl?: string;
   socialLinks?: {
     instagram?: string;
     github?: string;

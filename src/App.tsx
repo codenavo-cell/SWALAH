@@ -35,7 +35,8 @@ import {
 } from './data/initialData';
 
 import { Student, Team, Program, Notice, GalleryItem, Transaction, AttendanceRecord, ResourceItem, Idea, Memory, MagazineArticle, EventCalendarItem, Winner } from './types';
-import { Calendar, Folder, Megaphone, Shield, Award, Sparkles } from 'lucide-react';
+import { Calendar, Folder, Megaphone, Shield, Award, Sparkles, SlidersHorizontal, Sun, Moon, Plus, Minus } from 'lucide-react';
+import DisplaySettings from './components/DisplaySettings';
 
 export default function App() {
   // Navigation & UI States
@@ -45,10 +46,49 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeDutyTeamId, setActiveDutyTeamId] = useState(1);
 
+  // Brightness and Display Settings
+  const [brightness, setBrightness] = useState<number>(() => {
+    const saved = localStorage.getItem('swalah_brightness');
+    return saved ? parseInt(saved, 10) : 75; // Default is 75% as per spec (Normal Mode)
+  });
+  const [highContrast, setHighContrast] = useState<boolean>(() => {
+    const saved = localStorage.getItem('swalah_highContrast');
+    return saved === 'true';
+  });
+  const [isDisplaySettingsOpen, setIsDisplaySettingsOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('swalah_brightness', brightness.toString());
+  }, [brightness]);
+
+  useEffect(() => {
+    localStorage.setItem('swalah_highContrast', highContrast.toString());
+  }, [highContrast]);
+
   // Synchronized States with LocalStorage caching
   const [students, setStudents] = useState<Student[]>(() => {
     const saved = localStorage.getItem('swalah_students');
-    return saved ? JSON.parse(saved) : INITIAL_STUDENTS;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as Student[];
+        let updated = false;
+        const verified = parsed.map(st => {
+          if (st.admissionNumber === 289 && st.fullName !== 'YASEEN') {
+            st.fullName = 'YASEEN';
+            updated = true;
+          }
+          if (st.admissionNumber === 287 && st.fullName !== 'ALTHAF') {
+            st.fullName = 'ALTHAF';
+            updated = true;
+          }
+          return st;
+        });
+        return verified;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return INITIAL_STUDENTS;
   });
 
   const [teams, setTeams] = useState<Team[]>(() => {
@@ -284,7 +324,13 @@ export default function App() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col justify-between overflow-x-hidden">
+    <div 
+      className="relative min-h-screen flex flex-col justify-between overflow-x-hidden"
+      style={{ 
+        filter: `brightness(${brightness}%) ${highContrast ? 'contrast(125%) saturate(115%)' : ''}`, 
+        transition: 'filter 0.3s ease-in-out' 
+      }}
+    >
       
       {/* Scroll Progress Bar */}
       <div id="progress-bar" />
@@ -325,6 +371,8 @@ export default function App() {
             students={students}
             onSelectStudent={handleSelectStudent}
             isAdmin={isAdmin}
+            brightness={brightness}
+            setBrightness={setBrightness}
           />
         )}
 
@@ -454,6 +502,20 @@ export default function App() {
 
         {/* Floating Utility shortcuts panel for quick sub routing */}
         <div className="fixed bottom-6 right-6 z-40 flex flex-col gap-2">
+          {/* Detailed Settings Toggle Button */}
+          <button 
+            onClick={() => setIsDisplaySettingsOpen(!isDisplaySettingsOpen)}
+            className={`h-11 w-11 rounded-full bg-stone-900 border border-gold/30 flex items-center justify-center text-gold shadow-lg hover:bg-gold/15 cursor-pointer transition-all ${
+              isDisplaySettingsOpen 
+                ? 'bg-gold text-[#140b07] border-gold shadow-[0_0_15px_rgba(218,165,32,0.3)] font-bold' 
+                : ''
+            }`}
+            title="Open Detailed Display Settings Panel"
+            aria-label="Toggle Detailed Display Settings"
+          >
+            <SlidersHorizontal size={18} />
+          </button>
+          
           {/* Calendar bubble router */}
           <button 
             onClick={() => setActiveTab(activeTab === 'calendar' ? 'home' : 'calendar')}
@@ -488,6 +550,16 @@ export default function App() {
           setStudents(prev => prev.filter(s => s.admissionNumber !== admissionNumber));
           setSelectedStudent(null);
         }}
+      />
+
+      {/* Modern, glassmorphic Display Settings (Brightness and Contrast) */}
+      <DisplaySettings
+        isOpen={isDisplaySettingsOpen}
+        onClose={() => setIsDisplaySettingsOpen(false)}
+        brightness={brightness}
+        setBrightness={setBrightness}
+        highContrast={highContrast}
+        setHighContrast={setHighContrast}
       />
 
       {/* 11. IMMACULATE COMPLIANT FOOTER */}

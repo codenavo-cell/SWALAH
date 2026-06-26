@@ -269,7 +269,8 @@ export default function AdminPanel({
     programsParticipated: [],
     achievements: [],
     bio: '',
-    skills: []
+    skills: [],
+    photoUrl: ''
   });
 
   const [editingProgramId, setEditingProgramId] = useState<string | null>(null);
@@ -500,7 +501,8 @@ export default function AdminPanel({
       programsParticipated: [],
       achievements: [],
       bio: '',
-      skills: []
+      skills: [],
+      photoUrl: ''
     });
   };
 
@@ -1089,6 +1091,17 @@ export default function AdminPanel({
               </div>
 
               <div>
+                <label className="block text-xs text-stone-400 uppercase font-mono mb-1">Student Photo URL / Base64</label>
+                <input
+                  type="text"
+                  placeholder="Paste direct portrait URL or Base64 data"
+                  value={studentForm.photoUrl || ''}
+                  onChange={(e) => setStudentForm({ ...studentForm, photoUrl: e.target.value })}
+                  className="w-full bg-stone-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white"
+                />
+              </div>
+
+              <div>
                 <label className="block text-xs text-stone-400 uppercase font-mono mb-1">Student bio</label>
                 <textarea
                   placeholder="Short introduction..."
@@ -1672,7 +1685,7 @@ export default function AdminPanel({
                 setNewAdminName('');
                 setNewAdminPassword('');
                 setNewAdminRole('Admin');
-                setStudentForm({ admissionNumber: 0, fullName: '', role: '', teamId: undefined, attendancePercentage: 90, programsParticipated: [], achievements: [], bio: '', skills: [] });
+                setStudentForm({ admissionNumber: 0, fullName: '', role: '', teamId: undefined, attendancePercentage: 90, programsParticipated: [], achievements: [], bio: '', skills: [], photoUrl: '' });
                 setProgramForm({ id: '', title: '', date: '', venue: '', category: 'General', assignedTeamId: undefined, status: 'Upcoming', description: '' });
                 setNoticeForm({ id: '', title: '', date: '', content: '', type: 'general' });
               }}

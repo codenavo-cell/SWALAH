@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Award, CheckCircle, Users, BadgeCheck, FileText, Instagram, Linkedin, Github, Shield, TrendingUp, Edit3, Trash2, Check, AlertCircle } from 'lucide-react';
+import { X, Award, CheckCircle, Users, BadgeCheck, FileText, Instagram, Linkedin, Github, Shield, TrendingUp, Edit3, Trash2, Check, AlertCircle, Upload, Image } from 'lucide-react';
 import { Student, Team } from '../types';
 import { CircularProgressRing } from './PremiumEffects';
+
+const PRESET_AVATARS = [
+  { name: 'Male Stylized 1', url: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80' },
+  { name: 'Male Stylized 2', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80' },
+  { name: 'Male Stylized 3', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80' },
+  { name: 'Female Stylized 1', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80' },
+  { name: 'Female Stylized 2', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' },
+  { name: 'Male Stylized 4', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80' }
+];
 
 interface StudentProfileModalProps {
   student: Student | null;
@@ -30,6 +39,7 @@ export default function StudentProfileModal({
   const [editBio, setEditBio] = useState('');
   const [editSkills, setEditSkills] = useState('');
   const [editAchievements, setEditAchievements] = useState('');
+  const [editPhotoUrl, setEditPhotoUrl] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Sync state whenever student changes
@@ -42,6 +52,7 @@ export default function StudentProfileModal({
       setEditBio(student.bio || '');
       setEditSkills((student.skills || []).join(', '));
       setEditAchievements((student.achievements || []).join(', '));
+      setEditPhotoUrl(student.photoUrl || '');
       setIsEditing(false);
       setShowDeleteConfirm(false);
     }
@@ -65,6 +76,17 @@ export default function StudentProfileModal({
     }
   };
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditPhotoUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSaveChanges = (e: React.FormEvent) => {
     e.preventDefault();
     if (!onUpdateStudent) return;
@@ -77,7 +99,8 @@ export default function StudentProfileModal({
       attendancePercentage: Number(editAttendance),
       bio: editBio,
       skills: editSkills.split(',').map(s => s.trim()).filter(Boolean),
-      achievements: editAchievements.split(',').map(a => a.trim()).filter(Boolean)
+      achievements: editAchievements.split(',').map(a => a.trim()).filter(Boolean),
+      photoUrl: editPhotoUrl
     };
 
     onUpdateStudent(updatedStudent);
@@ -141,10 +164,21 @@ export default function StudentProfileModal({
                 {/* Main Header Row */}
                 <div className="flex flex-col md:flex-row md:items-center gap-6 mt-4 pb-6 border-b border-white/5">
                   {/* Profile Avatar with Team Gradient */}
-                  <div className={`w-24 h-24 rounded-full flex items-center justify-center border-2 bg-gradient-to-br ${getTeamGradient(student.teamId)} shadow-lg shrink-0 relative overflow-hidden group`}>
-                    <span className="font-display text-3xl font-extrabold text-white">
-                      {student.fullName.split(' ').filter(n => n && n !== 'MOHAMMAD' && n !== 'MUHAMMAD' && n !== 'AHMED')[0]?.[0] || student.fullName[0]}
-                    </span>
+                  <div className="w-24 h-24 rounded-full flex items-center justify-center border-2 border-gold/40 bg-stone-900 shadow-lg shrink-0 relative overflow-hidden group">
+                    {student.photoUrl ? (
+                      <img 
+                        src={student.photoUrl} 
+                        alt={student.fullName}
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${getTeamGradient(student.teamId || 0)}`}>
+                        <span className="font-display text-3xl font-extrabold text-white">
+                          {student.fullName.split(' ').filter(n => n && n !== 'MOHAMMAD' && n !== 'MUHAMMAD' && n !== 'AHMED')[0]?.[0] || student.fullName[0]}
+                        </span>
+                      </div>
+                    )}
                     {/* ID Tag */}
                     <div className="absolute bottom-0 inset-x-0 bg-black/60 py-0.5 text-center text-[10px] uppercase tracking-wider font-mono text-gold font-bold">
                       #{student.admissionNumber}
@@ -333,6 +367,78 @@ export default function StudentProfileModal({
                       <option value={2}>Team 2 (Orange Hawks)</option>
                       <option value={3}>Team 3 (Yellow Stars)</option>
                     </select>
+                  </div>
+                </div>
+
+                <div className="border border-gold/20 bg-[#0c0704] p-3.5 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] uppercase font-mono text-stone-400 font-bold">Profile Portrait / Photo</label>
+                    {editPhotoUrl && (
+                      <button 
+                        type="button" 
+                        onClick={() => setEditPhotoUrl('')} 
+                        className="text-[10px] text-red-400 hover:text-red-300 font-mono cursor-pointer"
+                      >
+                        Remove Photo
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    {/* Preview of the selected image */}
+                    <div className="w-16 h-16 rounded-full border-2 border-gold/40 flex items-center justify-center overflow-hidden shrink-0 bg-stone-900">
+                      {editPhotoUrl ? (
+                        <img src={editPhotoUrl} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <span className="font-mono text-stone-500 text-[10px]">No Photo</span>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 space-y-2">
+                      {/* File input for manual upload */}
+                      <div className="flex items-center gap-2">
+                        <label className="px-3 py-1.5 bg-stone-800 text-stone-300 hover:bg-gold/15 hover:text-gold border border-gold/20 rounded-lg text-[10px] font-mono cursor-pointer flex items-center gap-1">
+                          <Upload size={12} />
+                          Upload Custom Photo
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={handlePhotoUpload} 
+                            className="hidden" 
+                          />
+                        </label>
+                        <span className="text-[9px] text-stone-500 font-mono">Max size 2MB (Persists locally)</span>
+                      </div>
+
+                      {/* Manual input for photo URL */}
+                      <input 
+                        type="text" 
+                        placeholder="Or paste direct image URL (e.g. Unsplash URL)"
+                        className="w-full bg-[#120a06] border border-gold/25 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-gold"
+                        value={editPhotoUrl}
+                        onChange={(e) => setEditPhotoUrl(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Preset Illustrated Portraits Selection */}
+                  <div className="space-y-1.5">
+                    <span className="text-[9px] font-mono text-stone-400 block">Select a premium preset portrait avatar:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {PRESET_AVATARS.map((avatar, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setEditPhotoUrl(avatar.url)}
+                          className={`w-9 h-9 rounded-full border-2 overflow-hidden hover:scale-105 active:scale-95 transition-all cursor-pointer ${
+                            editPhotoUrl === avatar.url ? 'border-gold scale-110 shadow-[0_0_8px_rgba(218,165,32,0.6)]' : 'border-stone-800/80 hover:border-gold/50'
+                          }`}
+                          title={avatar.name}
+                        >
+                          <img src={avatar.url} alt={avatar.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 

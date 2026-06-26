@@ -11,11 +11,12 @@ export const INITIAL_STUDENTS: Student[] = [
     achievements: ["Leader of the Year", "First Place in Debate"],
     bio: "Passionate leader, dedicated to the welfare of Swalah union students. Specializes in project coordination and public affairs.",
     skills: ["Leadership", "Public Speaking", "Public Relations"],
-    certificates: ["Strategic Management Cert", "Youth Leadership Diploma"]
+    certificates: ["Strategic Management Cert", "Youth Leadership Diploma"],
+    photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
   },
   {
     admissionNumber: 289,
-    fullName: "MOHAMMAD NASHWAN",
+    fullName: "YASEEN",
     role: "Vice President",
     teamId: 2,
     attendancePercentage: 94,
@@ -23,11 +24,12 @@ export const INITIAL_STUDENTS: Student[] = [
     achievements: ["Active Organizer Award"],
     bio: "Committed to supporting student-focused community programs and building high-performance student wings.",
     skills: ["Event Management", "Negotiation", "Crisis Resolution"],
-    certificates: []
+    certificates: [],
+    photoUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80"
   },
   {
     admissionNumber: 287,
-    fullName: "ALTAHF RAHMAN",
+    fullName: "ALTHAF",
     role: "Secretary",
     teamId: 3,
     attendancePercentage: 93,
@@ -35,7 +37,8 @@ export const INITIAL_STUDENTS: Student[] = [
     achievements: ["Excellent Documentation Award"],
     bio: "Managing administrative procedures, class communications, and keeping student modules perfectly aligned.",
     skills: ["Documentation", "Technical Writing", "Office Management"],
-    certificates: ["Professional Administrative Coordinator"]
+    certificates: ["Professional Administrative Coordinator"],
+    photoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80"
   },
   {
     admissionNumber: 265,
@@ -47,7 +50,8 @@ export const INITIAL_STUDENTS: Student[] = [
     achievements: ["Dedicated Service Award"],
     bio: "Helping coordinate program operations, agendas, and keeping general registers updated.",
     skills: ["Coordination", "Spreadsheets", "Planning"],
-    certificates: []
+    certificates: [],
+    photoUrl: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80"
   },
   {
     admissionNumber: 276,
@@ -58,7 +62,8 @@ export const INITIAL_STUDENTS: Student[] = [
     programsParticipated: ["Vision & Action", "Public Speaking", "Mushaira Night"],
     achievements: ["Financial Integrity Award"],
     bio: "Meticulous general ledger management, budget tracking, and ensuring transparency for union contributions.",
-    skills: ["Accounting", "Financial Analysis", "Budgeting"]
+    skills: ["Accounting", "Financial Analysis", "Budgeting"],
+    photoUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80"
   },
   {
     admissionNumber: 253,
@@ -67,7 +72,8 @@ export const INITIAL_STUDENTS: Student[] = [
     teamId: 3,
     attendancePercentage: 88,
     programsParticipated: ["Mushaira Night", "Kannada Drama"],
-    achievements: []
+    achievements: [],
+    photoUrl: "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?w=150&auto=format&fit=crop&q=80"
   },
   {
     admissionNumber: 290,

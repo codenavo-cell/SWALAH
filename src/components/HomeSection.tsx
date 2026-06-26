@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, Megaphone, ThumbsUp, Sparkles, BookOpen, Clock, Heart, Award, Send, Check, Image as ImageIcon, MessageSquare, Download, Share2, HelpCircle, Plus, Edit2, Trash2, X, AlertCircle } from 'lucide-react';
+import { ArrowRight, Megaphone, ThumbsUp, Sparkles, BookOpen, Clock, Heart, Award, Send, Check, Image as ImageIcon, MessageSquare, Download, Share2, HelpCircle, Plus, Edit2, Trash2, X, AlertCircle, Sun, Moon } from 'lucide-react';
 import { Notice, GalleryItem, Idea, Memory, MagazineArticle, Student } from '../types';
 import { 
   TypewriterSplitHeading, 
@@ -27,6 +27,8 @@ interface HomeSectionProps {
   students: Student[];
   onSelectStudent: (s: Student) => void;
   isAdmin?: boolean;
+  brightness?: number;
+  setBrightness?: (b: number) => void;
 }
 
 export default function HomeSection({
@@ -42,7 +44,9 @@ export default function HomeSection({
   setActiveTab,
   students,
   onSelectStudent,
-  isAdmin
+  isAdmin,
+  brightness = 75,
+  setBrightness
 }: HomeSectionProps) {
   const [selectedGalleryItem, setSelectedGalleryItem] = useState<GalleryItem | null>(null);
   
@@ -1237,73 +1241,177 @@ export default function HomeSection({
       </section>
 
       {/* 10. CONTACT SECTION */}
-      <section id="contact-element-section" className="p-6 glass-panel rounded-2xl border border-gold/15 space-y-6">
+      <section id="contact-element-section" className="p-6 glass-panel rounded-2xl border border-gold/15 space-y-6 relative overflow-hidden">
         <div className="text-center space-y-1">
           <h3 className="text-2xl font-display font-extrabold text-white text-gold-glow">CONNECT WITH THE COMMITTEE</h3>
           <p className="text-stone-400 text-xs">Reach out directly to officers for administrative reports or scholarship queries.</p>
         </div>
 
-        <form onSubmit={handleContactSubmit} className="max-w-2xl mx-auto space-y-4 font-sans">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center md:items-stretch gap-8 relative">
+          <form onSubmit={handleContactSubmit} className="flex-1 space-y-4 font-sans w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-stone-400 uppercase font-mono mb-1">Your Name</label>
+                <input 
+                  type="text"
+                  placeholder="E.g., Shammas"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  className="w-full bg-[#120a06] border border-gold/20 text-xs text-white rounded-xl px-4 py-3 focus:outline-none focus:border-gold"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-stone-400 uppercase font-mono mb-1">Your Email</label>
+                <input 
+                  type="email"
+                  placeholder="name@gmail.com"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  className="w-full bg-[#120a06] border border-gold/20 text-xs text-white rounded-xl px-4 py-3 focus:outline-none focus:border-gold"
+                  required
+                />
+              </div>
+            </div>
+
             <div>
-              <label className="block text-xs text-stone-400 uppercase font-mono mb-1">Your Name</label>
+              <label className="block text-xs text-stone-400 uppercase font-mono mb-1">Subject</label>
               <input 
                 type="text"
-                placeholder="E.g., Shammas"
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
+                placeholder="Query regarding Arabic Wing event..."
+                value={contactSubject}
+                onChange={(e) => setContactSubject(e.target.value)}
                 className="w-full bg-[#120a06] border border-gold/20 text-xs text-white rounded-xl px-4 py-3 focus:outline-none focus:border-gold"
-                required
               />
             </div>
+
             <div>
-              <label className="block text-xs text-stone-400 uppercase font-mono mb-1">Your Email</label>
-              <input 
-                type="email"
-                placeholder="name@gmail.com"
-                value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
-                className="w-full bg-[#120a06] border border-gold/20 text-xs text-white rounded-xl px-4 py-3 focus:outline-none focus:border-gold"
+              <label className="block text-xs text-stone-400 uppercase font-mono mb-1">Message</label>
+              <textarea 
+                placeholder="Your complete description..."
+                value={contactMessage}
+                onChange={(e) => setContactMessage(e.target.value)}
+                className="w-full bg-[#120a06] border border-gold/20 text-xs text-white rounded-xl px-4 py-3 h-28 focus:outline-none focus:border-gold"
                 required
               />
             </div>
-          </div>
 
-          <div>
-            <label className="block text-xs text-stone-400 uppercase font-mono mb-1">Subject</label>
-            <input 
-              type="text"
-              placeholder="Query regarding Arabic Wing event..."
-              value={contactSubject}
-              onChange={(e) => setContactSubject(e.target.value)}
-              className="w-full bg-[#120a06] border border-gold/20 text-xs text-white rounded-xl px-4 py-3 focus:outline-none focus:border-gold"
-            />
-          </div>
+            <button 
+              type="submit"
+              className="w-full py-3 bg-gradient-to-r from-orange-highlight to-gold text-black font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-gold cursor-pointer transition-colors font-mono"
+            >
+              Send Message
+            </button>
 
-          <div>
-            <label className="block text-xs text-stone-400 uppercase font-mono mb-1">Message</label>
-            <textarea 
-              placeholder="Your complete description..."
-              value={contactMessage}
-              onChange={(e) => setContactMessage(e.target.value)}
-              className="w-full bg-[#120a06] border border-gold/20 text-xs text-white rounded-xl px-4 py-3 h-28 focus:outline-none focus:border-gold"
-              required
-            />
-          </div>
+            {contactSuccess && (
+              <div className="p-3 bg-emerald-950/45 border border-emerald-500/20 text-emerald-400 rounded-xl text-center text-xs font-semibold font-mono">
+                ✓ Message delivered! The Executive Committee will reach out via email shortly.
+              </div>
+            )}
+          </form>
 
-          <button 
-            type="submit"
-            className="w-full py-3 bg-gradient-to-r from-orange-highlight to-gold text-black font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-gold cursor-pointer transition-colors font-mono"
-          >
-            Send Message
-          </button>
-
-          {contactSuccess && (
-            <div className="p-3 bg-emerald-950/45 border border-emerald-500/20 text-emerald-400 rounded-xl text-center text-xs font-semibold font-mono">
-              ✓ Message delivered! The Executive Committee will reach out via email shortly.
+          {/* Interactive Brightness Pill Capsule matching the second picture */}
+          <div className="flex flex-col items-center justify-center px-4">
+            <div className="text-center mb-2">
+              <span className="text-[10px] font-mono font-bold text-gold/80 block tracking-wider uppercase">Brightness</span>
+              <span className="text-xs font-mono font-bold text-white bg-gold/10 px-2 py-0.5 rounded-full mt-1 inline-block">
+                {brightness}%
+              </span>
             </div>
-          )}
-        </form>
+
+            <div className="flex flex-col items-center bg-[#090503] border-2 border-gold rounded-full py-5 px-3 shadow-[0_0_25px_rgba(218,165,32,0.5)] w-14 h-60 gap-4 select-none relative group/capsule">
+              {/* Glow effect behind the capsule */}
+              <div className="absolute inset-0 bg-gold/5 rounded-full blur-md -z-10" />
+
+              {/* Top Sun Icon Button */}
+              <button
+                onClick={() => setBrightness && setBrightness(Math.min(150, brightness + 10))}
+                className="text-gold hover:scale-110 active:scale-95 transition-transform duration-200 cursor-pointer"
+                title="Increase Brightness (+10%)"
+                aria-label="Increase Brightness"
+              >
+                <Sun size={20} className="drop-shadow-[0_0_8px_rgba(218,165,32,0.8)] animate-pulse" />
+              </button>
+
+              {/* Vertical Interactive Slider Track */}
+              <div 
+                className="relative flex-1 w-1 bg-stone-800 rounded-full cursor-pointer flex items-center justify-center py-1 group/track"
+                title="Drag or click to adjust brightness"
+                onMouseDown={(e) => {
+                  if (!setBrightness) return;
+                  const track = e.currentTarget;
+                  const handleMove = (moveEvent: MouseEvent) => {
+                    const rect = track.getBoundingClientRect();
+                    const relativeY = moveEvent.clientY - rect.top;
+                    const height = rect.height || 1;
+                    const percent = Math.max(0, Math.min(1, 1 - (relativeY / height)));
+                    setBrightness(Math.round(30 + percent * 120)); // 30% to 150% range
+                  };
+                  const handleMouseUp = () => {
+                    window.removeEventListener('mousemove', handleMove);
+                    window.removeEventListener('mouseup', handleMouseUp);
+                  };
+                  window.addEventListener('mousemove', handleMove);
+                  window.addEventListener('mouseup', handleMouseUp);
+                  
+                  const rect = track.getBoundingClientRect();
+                  const relativeY = e.clientY - rect.top;
+                  const height = rect.height || 1;
+                  const percent = Math.max(0, Math.min(1, 1 - (relativeY / height)));
+                  setBrightness(Math.round(30 + percent * 120));
+                }}
+                onTouchStart={(e) => {
+                  if (!setBrightness) return;
+                  const track = e.currentTarget;
+                  const handleTouchMove = (moveEvent: TouchEvent) => {
+                    if (moveEvent.touches.length === 0) return;
+                    const rect = track.getBoundingClientRect();
+                    const relativeY = moveEvent.touches[0].clientY - rect.top;
+                    const height = rect.height || 1;
+                    const percent = Math.max(0, Math.min(1, 1 - (relativeY / height)));
+                    setBrightness(Math.round(30 + percent * 120));
+                  };
+                  const handleTouchEnd = () => {
+                    window.removeEventListener('touchmove', handleTouchMove);
+                    window.removeEventListener('touchend', handleTouchEnd);
+                  };
+                  window.addEventListener('touchmove', handleTouchMove);
+                  window.addEventListener('touchend', handleTouchEnd);
+
+                  const rect = track.getBoundingClientRect();
+                  const relativeY = e.touches[0].clientY - rect.top;
+                  const height = rect.height || 1;
+                  const percent = Math.max(0, Math.min(1, 1 - (relativeY / height)));
+                  setBrightness(Math.round(30 + percent * 120));
+                }}
+              >
+                {/* Highlight Fill color from bottom */}
+                <div 
+                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gold to-yellow-500 rounded-full"
+                  style={{ height: `${((brightness - 30) / 120) * 100}%` }}
+                />
+                
+                {/* Golden Handle Knob matching the mockup circular thumb */}
+                <div 
+                  className="absolute w-4 h-4 bg-gold rounded-full border-2 border-stone-950 shadow-[0_0_12px_rgba(218,165,32,0.95)] cursor-grab active:cursor-grabbing transition-transform duration-75 group-hover/track:scale-125"
+                  style={{ 
+                    bottom: `calc(${((brightness - 30) / 120) * 100}% - 8px)` 
+                  }}
+                />
+              </div>
+
+              {/* Bottom Sun Icon Button */}
+              <button
+                onClick={() => setBrightness && setBrightness(Math.max(30, brightness - 10))}
+                className="text-gold/50 hover:text-gold hover:scale-110 active:scale-95 transition-colors duration-200 cursor-pointer"
+                title="Decrease Brightness (-10%)"
+                aria-label="Decrease Brightness"
+              >
+                <Sun size={15} className="drop-shadow-[0_0_4px_rgba(218,165,32,0.4)]" />
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Admin Notices Modals */}
