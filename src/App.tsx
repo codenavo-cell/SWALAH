@@ -35,8 +35,16 @@ import {
 } from './data/initialData';
 
 import { Student, Team, Program, Notice, GalleryItem, Transaction, AttendanceRecord, ResourceItem, Idea, Memory, MagazineArticle, EventCalendarItem, Winner } from './types';
-import { Calendar, Folder, Megaphone, Shield, Award, Sparkles, SlidersHorizontal, Sun, Moon, Plus, Minus } from 'lucide-react';
+import { Calendar, Folder, Megaphone, Shield, Award, Sparkles, SlidersHorizontal, Sun, Moon, Plus, Minus, Database } from 'lucide-react';
 import DisplaySettings from './components/DisplaySettings';
+
+// Firebase Sync Lib
+import { 
+  pullAllDataFromFirebase, 
+  pushAllDataToFirebase, 
+  bulkSyncToFirebase 
+} from './lib/firebase';
+
 
 export default function App() {
   // Navigation & UI States
@@ -45,6 +53,15 @@ export default function App() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeDutyTeamId, setActiveDutyTeamId] = useState(1);
+
+  // Firebase Sync Configuration State
+  const [firebaseSync, setFirebaseSync] = useState<boolean>(() => {
+    const saved = localStorage.getItem('swalah_firebaseSync');
+    return saved !== 'false'; // Default to true
+  });
+  const [firebaseLoading, setFirebaseLoading] = useState<boolean>(false);
+  const [firebaseStatus, setFirebaseStatus] = useState<'connected' | 'error' | 'loading'>('loading');
+
 
   // Brightness and Display Settings
   const [brightness, setBrightness] = useState<number>(() => {
@@ -64,6 +81,11 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('swalah_highContrast', highContrast.toString());
   }, [highContrast]);
+
+  useEffect(() => {
+    localStorage.setItem('swalah_firebaseSync', firebaseSync.toString());
+  }, [firebaseSync]);
+
 
   // Synchronized States with LocalStorage caching
   const [students, setStudents] = useState<Student[]>(() => {
@@ -250,6 +272,151 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('swalah_winners', JSON.stringify(winners));
   }, [winners]);
+
+  // Load from Firebase on mount or when firebaseSync toggled
+  useEffect(() => {
+    async function loadFirebaseData() {
+      if (!firebaseSync) {
+        setFirebaseStatus('connected');
+        return;
+      }
+      
+      setFirebaseLoading(true);
+      setFirebaseStatus('loading');
+      
+      try {
+        const result = await pullAllDataFromFirebase();
+        if (result.success && result.data) {
+          const d = result.data;
+          
+          // Check if firestore has students data. If empty, seed Firestore with local data!
+          if (d.students && d.students.length > 0) {
+            if (d.students) setStudents(d.students);
+            if (d.teams && d.teams.length > 0) setTeams(d.teams);
+            if (d.programs && d.programs.length > 0) setPrograms(d.programs);
+            if (d.notices && d.notices.length > 0) setNotices(d.notices);
+            if (d.gallery && d.gallery.length > 0) setGallery(d.gallery);
+            if (d.transactions && d.transactions.length > 0) setTransactions(d.transactions);
+            if (d.attendance && d.attendance.length > 0) setAttendance(d.attendance);
+            if (d.resources && d.resources.length > 0) setResources(d.resources);
+            if (d.ideas && d.ideas.length > 0) setIdeas(d.ideas);
+            if (d.memories && d.memories.length > 0) setMemories(d.memories);
+            if (d.winners && d.winners.length > 0) setWinners(d.winners);
+            if (d.calendarEvents && d.calendarEvents.length > 0) setCalendarEvents(d.calendarEvents);
+            if (d.committee && d.committee.length > 0) setCommitteeStructure(d.committee);
+            console.log('Firebase Cloud Data successfully pulled and synchronized!');
+          } else {
+            // Firestore is empty. Let's seed it with initial data!
+            console.log('Firestore is empty. Seeding with initial data...');
+            await pushAllDataToFirebase({
+              students,
+              teams,
+              programs,
+              notices,
+              gallery,
+              transactions,
+              attendance,
+              resources,
+              ideas,
+              memories,
+              winners,
+              calendarEvents,
+              committee: committeeStructure
+            });
+          }
+          setFirebaseStatus('connected');
+        } else {
+          setFirebaseStatus('error');
+        }
+      } catch (e) {
+        console.error('Firebase initialization error:', e);
+        setFirebaseStatus('error');
+      } finally {
+        setFirebaseLoading(false);
+      }
+    }
+    
+    loadFirebaseData();
+  }, [firebaseSync]);
+
+  // Real-time auto sync push handlers
+  useEffect(() => {
+    if (firebaseSync && !firebaseLoading) {
+      bulkSyncToFirebase('students', students, 'admissionNumber');
+    }
+  }, [students, firebaseSync, firebaseLoading]);
+
+  useEffect(() => {
+    if (firebaseSync && !firebaseLoading) {
+      bulkSyncToFirebase('teams', teams, 'id');
+    }
+  }, [teams, firebaseSync, firebaseLoading]);
+
+  useEffect(() => {
+    if (firebaseSync && !firebaseLoading) {
+      bulkSyncToFirebase('programs', programs, 'id');
+    }
+  }, [programs, firebaseSync, firebaseLoading]);
+
+  useEffect(() => {
+    if (firebaseSync && !firebaseLoading) {
+      bulkSyncToFirebase('notices', notices, 'id');
+    }
+  }, [notices, firebaseSync, firebaseLoading]);
+
+  useEffect(() => {
+    if (firebaseSync && !firebaseLoading) {
+      bulkSyncToFirebase('gallery', gallery, 'id');
+    }
+  }, [gallery, firebaseSync, firebaseLoading]);
+
+  useEffect(() => {
+    if (firebaseSync && !firebaseLoading) {
+      bulkSyncToFirebase('transactions', transactions, 'id');
+    }
+  }, [transactions, firebaseSync, firebaseLoading]);
+
+  useEffect(() => {
+    if (firebaseSync && !firebaseLoading) {
+      bulkSyncToFirebase('attendance', attendance, 'id');
+    }
+  }, [attendance, firebaseSync, firebaseLoading]);
+
+  useEffect(() => {
+    if (firebaseSync && !firebaseLoading) {
+      bulkSyncToFirebase('resources', resources, 'id');
+    }
+  }, [resources, firebaseSync, firebaseLoading]);
+
+  useEffect(() => {
+    if (firebaseSync && !firebaseLoading) {
+      bulkSyncToFirebase('ideas', ideas, 'id');
+    }
+  }, [ideas, firebaseSync, firebaseLoading]);
+
+  useEffect(() => {
+    if (firebaseSync && !firebaseLoading) {
+      bulkSyncToFirebase('memories', memories, 'id');
+    }
+  }, [memories, firebaseSync, firebaseLoading]);
+
+  useEffect(() => {
+    if (firebaseSync && !firebaseLoading) {
+      bulkSyncToFirebase('winners', winners, 'id');
+    }
+  }, [winners, firebaseSync, firebaseLoading]);
+
+  useEffect(() => {
+    if (firebaseSync && !firebaseLoading) {
+      bulkSyncToFirebase('calendarEvents', calendarEvents, 'id');
+    }
+  }, [calendarEvents, firebaseSync, firebaseLoading]);
+
+  useEffect(() => {
+    if (firebaseSync && !firebaseLoading) {
+      bulkSyncToFirebase('committee', committeeStructure, 'id');
+    }
+  }, [committeeStructure, firebaseSync, firebaseLoading]);
 
   // Scroll Progress and cursor glow effects listeners
   useEffect(() => {
@@ -474,6 +641,24 @@ export default function App() {
             setTransactions={setTransactions}
             attendance={attendance}
             setAttendance={setAttendance}
+            winners={winners}
+            setWinners={setWinners}
+            calendarEvents={calendarEvents}
+            setCalendarEvents={setCalendarEvents}
+            ideas={ideas}
+            setIdeas={setIdeas}
+            memories={memories}
+            setMemories={setMemories}
+            resources={resources}
+            setResources={setResources}
+            committeeStructure={committeeStructure}
+            setCommitteeStructure={setCommitteeStructure}
+            firebaseSync={firebaseSync}
+            setFirebaseSync={setFirebaseSync}
+            firebaseLoading={firebaseLoading}
+            setFirebaseLoading={setFirebaseLoading}
+            firebaseStatus={firebaseStatus}
+            setFirebaseStatus={setFirebaseStatus}
             isAdmin={isAdmin}
             onLoginSuccess={() => setIsAdmin(true)}
             onLogout={() => {

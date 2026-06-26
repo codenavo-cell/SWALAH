@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Plus, Trash2, Edit2, Download, AlertTriangle, Key, ArrowRight, CheckCircle2, RefreshCw, BarChart2, Users, Calendar, Megaphone, DollarSign, Image, FileText, Settings, ShieldAlert, Mail, Send, Sparkles, Check, Shield, Activity, UserPlus, Eye, EyeOff, LockOpen } from 'lucide-react';
-import { Student, Program, Team, Notice, GalleryItem, Transaction, AttendanceRecord, LanguageWing } from '../types';
+import { Lock, Plus, Trash2, Edit2, Download, AlertTriangle, Key, ArrowRight, CheckCircle2, RefreshCw, BarChart2, Users, Calendar, Megaphone, DollarSign, Image, FileText, Settings, ShieldAlert, Mail, Send, Sparkles, Check, Shield, Activity, UserPlus, Eye, EyeOff, LockOpen, Database } from 'lucide-react';
+import { Student, Program, Team, Notice, GalleryItem, Transaction, AttendanceRecord, LanguageWing, Winner, EventCalendarItem, Idea, Memory, ResourceItem } from '../types';
+import { pushAllDataToFirebase, pullAllDataFromFirebase } from '../lib/firebase';
 
 interface AdminAccount {
   email: string;
@@ -31,6 +32,24 @@ interface AdminPanelProps {
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
   attendance: AttendanceRecord[];
   setAttendance: React.Dispatch<React.SetStateAction<AttendanceRecord[]>>;
+  winners: Winner[];
+  setWinners: React.Dispatch<React.SetStateAction<Winner[]>>;
+  calendarEvents: EventCalendarItem[];
+  setCalendarEvents: React.Dispatch<React.SetStateAction<EventCalendarItem[]>>;
+  ideas: Idea[];
+  setIdeas: React.Dispatch<React.SetStateAction<Idea[]>>;
+  memories: Memory[];
+  setMemories: React.Dispatch<React.SetStateAction<Memory[]>>;
+  resources: ResourceItem[];
+  setResources: React.Dispatch<React.SetStateAction<ResourceItem[]>>;
+  committeeStructure: { roleName: string; studentAdNo: number; description: string; vision: string }[];
+  setCommitteeStructure: React.Dispatch<React.SetStateAction<{ roleName: string; studentAdNo: number; description: string; vision: string }[]>>;
+  firebaseSync: boolean;
+  setFirebaseSync: React.Dispatch<React.SetStateAction<boolean>>;
+  firebaseLoading: boolean;
+  setFirebaseLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  firebaseStatus: 'connected' | 'error' | 'loading';
+  setFirebaseStatus: React.Dispatch<React.SetStateAction<'connected' | 'error' | 'loading'>>;
   isAdmin: boolean;
   onLoginSuccess: () => void;
   onLogout: () => void;
@@ -52,6 +71,24 @@ export default function AdminPanel({
   setTransactions,
   attendance,
   setAttendance,
+  winners,
+  setWinners,
+  calendarEvents,
+  setCalendarEvents,
+  ideas,
+  setIdeas,
+  memories,
+  setMemories,
+  resources,
+  setResources,
+  committeeStructure,
+  setCommitteeStructure,
+  firebaseSync,
+  setFirebaseSync,
+  firebaseLoading,
+  setFirebaseLoading,
+  firebaseStatus,
+  setFirebaseStatus,
   isAdmin,
   onLoginSuccess,
   onLogout,
@@ -60,7 +97,7 @@ export default function AdminPanel({
   const [pin, setPin] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(isAdmin);
   const [authError, setAuthError] = useState('');
-  const [adminTab, setAdminTab] = useState<'students' | 'programs' | 'notices' | 'gallery' | 'finance' | 'email' | 'logs' | 'admins'>('students');
+  const [adminTab, setAdminTab] = useState<'students' | 'programs' | 'notices' | 'gallery' | 'finance' | 'email' | 'logs' | 'admins' | 'firebase'>('students');
 
   // Sync if global Admin state changes
   useEffect(() => {
@@ -77,6 +114,165 @@ export default function AdminPanel({
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [enteredOtp, setEnteredOtp] = useState('');
   const [systemLogs, setSystemLogs] = useState<string[]>([]);
+
+  // Firebase Logs and Status Actions
+  const [firebaseLog, setFirebaseLog] = useState<string[]>([
+    `[SYSTEM] Firebase client initialized with App ID: 1:617403429783...`,
+    `[SYSTEM] Connected to Firestore database: ai-studio-remixswalahunion-3aa332ae-9890-4ecd-bf83-a323b888b1f0`,
+    `[INFO] Real-time active cloud synchronizer stands ready.`
+  ]);
+  const [syncStatusText, setSyncStatusText] = useState('All systems nominal');
+
+  const handlePushToCloud = async () => {
+    setFirebaseLoading(true);
+    setSyncStatusText('Pushing all data collections to Firestore...');
+    setFirebaseLog(prev => [...prev, `[SYNC] Pushing all local states to Firestore...`]);
+    try {
+      const res = await pushAllDataToFirebase({
+        students,
+        teams,
+        programs,
+        notices,
+        gallery,
+        transactions,
+        attendance,
+        resources,
+        ideas,
+        memories,
+        winners,
+        calendarEvents,
+        committee: committeeStructure
+      });
+      if (res.success) {
+        setFirebaseStatus('connected');
+        setSyncStatusText('Push successful!');
+        setFirebaseLog(prev => [...prev, `[SUCCESS] Pushed: ${students.length} students, ${teams.length} teams, ${programs.length} programs, ${notices.length} notices, ${gallery.length} gallery items, ${transactions.length} finances, ${attendance.length} attendance, ${winners.length} winners.`]);
+      } else {
+        setFirebaseStatus('error');
+        setSyncStatusText('Push failed.');
+        setFirebaseLog(prev => [...prev, `[ERROR] Push failed: ${String(res.error || 'Unknown error')}`]);
+      }
+    } catch (err: any) {
+      setFirebaseStatus('error');
+      setSyncStatusText('Push error.');
+      setFirebaseLog(prev => [...prev, `[CRITICAL] Push error: ${err.message}`]);
+    } finally {
+      setFirebaseLoading(false);
+    }
+  };
+
+  const handlePullFromCloud = async () => {
+    setFirebaseLoading(true);
+    setSyncStatusText('Pulling all data collections from Firestore...');
+    setFirebaseLog(prev => [...prev, `[SYNC] Fetching all documents from Firestore...`]);
+    try {
+      const res = await pullAllDataFromFirebase();
+      if (res.success && res.data) {
+        const d = res.data;
+        if (d.students && d.students.length > 0) {
+          setStudents(d.students);
+          if (d.teams) setTeams(d.teams);
+          if (d.programs) setPrograms(d.programs);
+          if (d.notices) setNotices(d.notices);
+          if (d.gallery) setGallery(d.gallery);
+          if (d.transactions) setTransactions(d.transactions);
+          if (d.attendance) setAttendance(d.attendance);
+          if (d.resources) setResources(d.resources);
+          if (d.ideas) setIdeas(d.ideas);
+          if (d.memories) setMemories(d.memories);
+          if (d.winners) setWinners(d.winners);
+          if (d.calendarEvents) setCalendarEvents(d.calendarEvents);
+          if (d.committee) setCommitteeStructure(d.committee);
+          
+          setFirebaseStatus('connected');
+          setSyncStatusText('Pull successful!');
+          setFirebaseLog(prev => [...prev, `[SUCCESS] Pulled and replaced local cache with: ${d.students?.length || 0} students, ${d.teams?.length || 0} teams, ${d.programs?.length || 0} programs, ${d.notices?.length || 0} notices.`]);
+        } else {
+          setSyncStatusText('Firestore empty or structure invalid.');
+          setFirebaseLog(prev => [...prev, `[WARNING] Pull completed but Firestore appears empty.`]);
+        }
+      } else {
+        setFirebaseStatus('error');
+        setSyncStatusText('Pull failed.');
+        setFirebaseLog(prev => [...prev, `[ERROR] Pull failed: ${String(res.error || 'Unknown error')}`]);
+      }
+    } catch (err: any) {
+      setFirebaseStatus('error');
+      setSyncStatusText('Pull error.');
+      setFirebaseLog(prev => [...prev, `[CRITICAL] Pull error: ${err.message}`]);
+    } finally {
+      setFirebaseLoading(false);
+    }
+  };
+
+  const handleFactoryReset = async () => {
+    if (!window.confirm("Are you sure you want to perform a hard Factory Reset? This will overwrite your local caches with default initial values and sync if Auto-Sync is enabled!")) {
+      return;
+    }
+    
+    setFirebaseLoading(true);
+    setSyncStatusText('Restoring factory values...');
+    setFirebaseLog(prev => [...prev, `[RESET] Restoring all data schemas to factory specifications...`]);
+    
+    try {
+      // Clear localStorage caches
+      const keysToClear = [
+        'swalah_students', 'swalah_teams', 'swalah_programs', 
+        'swalah_notices', 'swalah_gallery', 'swalah_transactions', 
+        'swalah_attendance', 'swalah_resources', 'swalah_ideas', 
+        'swalah_memories', 'swalah_winners', 'swalah_calendar_events', 
+        'swalah_committee'
+      ];
+      keysToClear.forEach(k => localStorage.removeItem(k));
+      
+      // Load initial payload values
+      const {
+        INITIAL_STUDENTS,
+        INITIAL_TEAMS,
+        INITIAL_PROGRAMS,
+        INITIAL_NOTICES,
+        INITIAL_GALLERY,
+        INITIAL_TRANSACTIONS,
+        INITIAL_ATTENDANCE,
+        INITIAL_RESOURCES,
+        INITIAL_IDEAS,
+        INITIAL_MEMORIES,
+        INITIAL_WINNERS
+      } = await import('../data/initialData');
+      
+      setStudents(INITIAL_STUDENTS);
+      setTeams(INITIAL_TEAMS);
+      setPrograms(INITIAL_PROGRAMS);
+      setNotices(INITIAL_NOTICES);
+      setGallery(INITIAL_GALLERY);
+      setTransactions(INITIAL_TRANSACTIONS);
+      setAttendance(INITIAL_ATTENDANCE);
+      setResources(INITIAL_RESOURCES);
+      setIdeas(INITIAL_IDEAS);
+      setMemories(INITIAL_MEMORIES);
+      setWinners(INITIAL_WINNERS);
+      setCalendarEvents([
+        { id: "cal-1", title: "Essay Writing (Arabic)", date: "2026-01-18", category: "Arabic", venue: "Main Hall A", assignedTeam: "Team 1" },
+        { id: "cal-2", title: "Public Speaking Challenge", date: "2026-02-02", category: "English", venue: "Auditorium B", assignedTeam: "Team 2" },
+        { id: "cal-3", title: "Mushaira Night", date: "2026-02-14", category: "Urdu", venue: "Seminar Room 1", assignedTeam: "Team 3" },
+        { id: "cal-4", title: "Kannada Drama Rehears Rehearsal", date: "2026-03-05", category: "Kannada", venue: "Cultural Amphitheater", assignedTeam: "Team 1" }
+      ]);
+      setCommitteeStructure([
+        { roleName: "President", studentAdNo: 288, description: "Directs general body activities, coordinates study panels, and represents academic interests.", vision: "Empowering classmates through digital archives and multi-lingual programs." },
+        { roleName: "Vice President", studentAdNo: 289, description: "Co-directs operations, guides student wings, and administers classes schedules.", vision: "Establishing robust collaborative team networks." },
+        { roleName: "Secretary", studentAdNo: 287, description: "Maintains files registers, handles notices, and schedules campus program boards.", vision: "Absolute transparency and efficient student records storage." }
+      ]);
+      
+      setSyncStatusText('Reset completed!');
+      setFirebaseLog(prev => [...prev, `[SUCCESS] Database fully reset to initial state definitions.`]);
+    } catch (err: any) {
+      setSyncStatusText('Reset failed.');
+      setFirebaseLog(prev => [...prev, `[ERROR] Reset failed: ${err.message}`]);
+    } finally {
+      setFirebaseLoading(false);
+    }
+  };
+
 
   // Persistent Admin accounts list
   const [adminAccounts, setAdminAccounts] = useState<AdminAccount[]>(() => {
@@ -1013,6 +1209,14 @@ export default function AdminPanel({
         >
           <Shield size={14} /> Manage Admins ({adminAccounts.length})
         </button>
+        <button
+          onClick={() => setAdminTab('firebase')}
+          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-xs font-semibold transition-all ${
+            adminTab === 'firebase' ? 'text-gold bg-gold/10' : 'text-stone-400 hover:text-stone-200'
+          }`}
+        >
+          <Database size={14} /> Firebase Sync ({firebaseStatus === 'connected' ? 'Connected' : firebaseStatus === 'loading' ? 'Syncing...' : 'Disconnected'})
+        </button>
       </div>
 
       {/* Tab Panels */}
@@ -1022,8 +1226,56 @@ export default function AdminPanel({
         <div className="lg:col-span-1 p-6 glass-panel rounded-2xl border border-gold/15 space-y-5 h-fit">
           <h3 className="text-base font-display font-bold text-white uppercase tracking-wide flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-gold shrink-0 border border-black" />
-            {editingStudentId || editingProgramId || editingNoticeId || editingAdminEmail ? 'Modify Entry' : adminTab === 'logs' ? 'Security Operations' : 'Add New Entry'}
+            {editingStudentId || editingProgramId || editingNoticeId || editingAdminEmail ? 'Modify Entry' : adminTab === 'logs' ? 'Security Operations' : adminTab === 'firebase' ? 'Firebase Sync Control' : 'Add New Entry'}
           </h3>
+
+          {/* Firebase Connections Settings Form */}
+          {adminTab === 'firebase' && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-stone-900 border border-white/5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-stone-400 font-mono">Sync Mode:</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-mono font-bold ${
+                    firebaseSync ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-stone-800 text-stone-400 border border-stone-700'
+                  }`}>
+                    {firebaseSync ? 'Auto-Sync' : 'Local Only'}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-stone-400 font-mono">Connection:</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-mono font-bold flex items-center gap-1 ${
+                    firebaseStatus === 'connected' ? 'bg-gold/10 text-gold border border-gold/20' : firebaseStatus === 'loading' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse' : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                  }`}>
+                    {firebaseStatus === 'connected' ? 'Connected' : firebaseStatus === 'loading' ? 'Connecting...' : 'Error/Offline'}
+                  </span>
+                </div>
+
+                <div className="pt-2 border-t border-white/5 space-y-1">
+                  <p className="text-[10px] text-stone-500 font-mono">Project ID: gen-lang-client-0286098172</p>
+                  <p className="text-[10px] text-stone-500 font-mono">Region: us-central</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs text-stone-300 font-semibold block">Automatic Cloud Sync</label>
+                <p className="text-[11px] text-stone-400 leading-relaxed">
+                  When enabled, all modifications (additions, updates, and deletions of students, programs, notices, etc.) are instantly synchronized to your live Firestore cloud database.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setFirebaseSync(!firebaseSync)}
+                  className={`w-full mt-2 py-2.5 rounded-xl text-xs font-mono font-bold transition-all border flex items-center justify-center gap-2 cursor-pointer ${
+                    firebaseSync 
+                      ? 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20' 
+                      : 'bg-gold/10 border-gold/30 text-gold hover:bg-gold/20'
+                  }`}
+                >
+                  {firebaseSync ? 'Disable Auto-Sync' : 'Enable Auto-Sync'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Student Form */}
           {adminTab === 'students' && (
@@ -2072,6 +2324,118 @@ export default function AdminPanel({
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Firebase Sync Control Panel */}
+          {adminTab === 'firebase' && (
+            <div className="p-6 glass-panel rounded-2xl border border-white/5 space-y-6 animate-fade-in text-left">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h4 className="text-base font-bold text-white flex items-center gap-2 font-display">
+                    <Database className="text-gold" size={18} /> Firebase Live Synchronizer Dashboard
+                  </h4>
+                  <p className="text-xs text-stone-400 mt-1">
+                    Manage persistent data pools, backups, and synchronizations with Firestore.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`h-2.5 w-2.5 rounded-full ${
+                    firebaseStatus === 'connected' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-red-500'
+                  }`} />
+                  <span className="text-xs text-stone-300 font-mono font-semibold uppercase">
+                    {firebaseStatus === 'connected' ? 'Cloud Link: ONLINE' : 'Cloud Link: OFFLINE'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Statistics Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="p-3 bg-stone-900/40 border border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] text-stone-500 font-mono uppercase block">Students</span>
+                  <span className="text-lg font-bold text-white">{students.length}</span>
+                </div>
+                <div className="p-3 bg-stone-900/40 border border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] text-stone-500 font-mono uppercase block">Programs</span>
+                  <span className="text-lg font-bold text-white">{programs.length}</span>
+                </div>
+                <div className="p-3 bg-stone-900/40 border border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] text-stone-500 font-mono uppercase block">Notices</span>
+                  <span className="text-lg font-bold text-white">{notices.length}</span>
+                </div>
+                <div className="p-3 bg-stone-900/40 border border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] text-stone-500 font-mono uppercase block">Teams</span>
+                  <span className="text-lg font-bold text-white">{teams.length}</span>
+                </div>
+                <div className="p-3 bg-stone-900/40 border border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] text-stone-500 font-mono uppercase block">Gallery</span>
+                  <span className="text-lg font-bold text-white">{gallery.length}</span>
+                </div>
+                <div className="p-3 bg-stone-900/40 border border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] text-stone-500 font-mono uppercase block">Finances</span>
+                  <span className="text-lg font-bold text-white">{transactions.length}</span>
+                </div>
+                <div className="p-3 bg-stone-900/40 border border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] text-stone-500 font-mono uppercase block">Attendance</span>
+                  <span className="text-lg font-bold text-white">{attendance.length}</span>
+                </div>
+                <div className="p-3 bg-stone-900/40 border border-white/5 rounded-xl text-center">
+                  <span className="text-[10px] text-stone-500 font-mono uppercase block">Champions</span>
+                  <span className="text-lg font-bold text-white">{winners.length}</span>
+                </div>
+              </div>
+
+              {/* Admin Actions */}
+              <div className="p-4 bg-amber-500/5 border border-gold/10 rounded-xl space-y-4">
+                <h5 className="text-xs font-bold uppercase font-mono tracking-wider text-gold">Manual Operations Pool</h5>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={handlePushToCloud}
+                    disabled={firebaseLoading}
+                    className="p-3 bg-[#120a06] border border-gold/30 hover:border-gold hover:bg-gold/10 text-gold rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+                  >
+                    <RefreshCw size={14} className={firebaseLoading ? "animate-spin" : ""} />
+                    Push Local to Cloud (Overwrite Firestore)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handlePullFromCloud}
+                    disabled={firebaseLoading}
+                    className="p-3 bg-[#120a06] border border-gold/30 hover:border-gold hover:bg-gold/10 text-gold rounded-xl text-xs font-mono font-bold flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+                  >
+                    <RefreshCw size={14} className={firebaseLoading ? "animate-spin" : ""} />
+                    Pull Cloud to Local (Overwrite Local Caches)
+                  </button>
+                </div>
+                <div className="pt-2 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <p className="text-[11px] text-stone-400">
+                    Status: <span className="text-white font-mono font-semibold">{syncStatusText}</span>
+                  </p>
+                  
+                  <button
+                    type="button"
+                    onClick={handleFactoryReset}
+                    disabled={firebaseLoading}
+                    className="px-4 py-2 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 rounded-lg text-[11px] font-mono font-bold cursor-pointer transition-all"
+                  >
+                    Hard Factory Reset Database
+                  </button>
+                </div>
+              </div>
+
+              {/* Console Terminal Log */}
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-stone-400 font-mono block font-display">Sync Terminal Console</span>
+                <div className="bg-black/80 border border-stone-800 rounded-xl p-4 h-40 overflow-y-auto font-mono text-[11px] space-y-1 text-stone-300">
+                  {firebaseLog.map((log, idx) => (
+                    <div key={idx} className="leading-relaxed whitespace-pre-wrap">
+                      <span className="text-stone-500">[{new Date().toLocaleDateString()} {new Date().toLocaleTimeString()}]</span> {log}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}

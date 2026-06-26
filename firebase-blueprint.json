@@ -1,0 +1,42 @@
+{
+  "collections": {
+    "students": {
+      "schema": {
+        "admissionNumber": "number",
+        "fullName": "string",
+        "role": "string",
+        "teamId": "number",
+        "attendancePercentage": "number",
+        "programsParticipated": "array",
+        "achievements": "array",
+        "bio": "string",
+        "skills": "array",
+        "photoUrl": "string"
+      }
+    },
+    "teams": {
+      "schema": {
+        "id": "number",
+        "name": "string",
+        "color": "string",
+        "captainId": "number",
+        "assistantId": "number",
+        "points": "number",
+        "logo": "string",
+        "description": "string"
+      }
+    },
+    "programs": {
+      "schema": {
+        "id": "string",
+        "title": "string",
+        "date": "string",
+        "venue": "string",
+        "category": "string",
+        "assignedTeamId": "number",
+        "status": "string",
+        "description": "string"
+      }
+    }
+  }
+}
